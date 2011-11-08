@@ -3094,7 +3094,7 @@ static int wl1271_op_hw_scan(struct ieee80211_hw *hw,
 			ret = -EBUSY;
 			goto out_sleep;
 		}
-		wl12xx_stop_dev(wl, wlvif);
+		wl12xx_croc(wl, wlvif->dev_role_id);
 	}
 
 	ret = wl1271_scan(hw->priv, vif, ssid, len, req);
@@ -3327,7 +3327,7 @@ static int wl1271_ap_set_probe_resp_tmpl(struct wl1271 *wl,
 
 	/* no need to change probe response if the SSID is set correctly */
 	if (wlvif->ssid_len > 0)
-		return wl1271_cmd_template_set(wl, wlvif,
+		return wl1271_cmd_template_set(wl, wlvif->role_id,
 					       CMD_TEMPL_AP_PROBE_RESPONSE,
 					       probe_rsp_data,
 					       probe_rsp_len, 0,
@@ -3364,7 +3364,7 @@ static int wl1271_ap_set_probe_resp_tmpl(struct wl1271 *wl,
 	       ptr, probe_rsp_len - (ptr - probe_rsp_data));
 	templ_len += probe_rsp_len - (ptr - probe_rsp_data);
 
-	return wl1271_cmd_template_set(wl, wlvif,
+	return wl1271_cmd_template_set(wl, wlvif->role_id,
 				       CMD_TEMPL_AP_PROBE_RESPONSE,
 				       probe_rsp_templ,
 				       templ_len, 0,
@@ -3451,7 +3451,7 @@ static int wl1271_bss_beacon_info_changed(struct wl1271 *wl,
 		min_rate = wl1271_tx_min_rate_get(wl, wlvif->basic_rate_set);
 		tmpl_id = is_ap ? CMD_TEMPL_AP_BEACON :
 				  CMD_TEMPL_BEACON;
-		ret = wl1271_cmd_template_set(wl, wlvif, tmpl_id,
+		ret = wl1271_cmd_template_set(wl, wlvif->role_id, tmpl_id,
 					      beacon->data,
 					      beacon->len, 0,
 					      min_rate);
@@ -3483,7 +3483,7 @@ static int wl1271_bss_beacon_info_changed(struct wl1271 *wl,
 						beacon->len,
 						min_rate);
 		else
-			ret = wl1271_cmd_template_set(wl, wlvif,
+			ret = wl1271_cmd_template_set(wl, wlvif->role_id,
 						CMD_TEMPL_PROBE_RESPONSE,
 						beacon->data,
 						beacon->len, 0,
@@ -3859,9 +3859,9 @@ sta_not_found:
 		}
 		/*
 		 * stop device role if started (we might already be in
-		 * STA role). TODO: make it better.
+		 * STA/IBSS role).
 		 */
-		if (wlvif->dev_role_id != WL12XX_INVALID_ROLE_ID) {
+		if (wlvif->dev_hlid != WL12XX_INVALID_LINK_ID) {
 			ret = wl12xx_stop_dev(wl, wlvif);
 			if (ret < 0)
 				goto out;
